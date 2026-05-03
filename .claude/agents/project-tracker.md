@@ -36,29 +36,29 @@ Transições com regras:
 | **dormant** | ❌ | ✅ | ❌ | ❌ | — | ✅ |
 | **sunset** | ❌ | ❌ | ❌ | ❌ | ❌ | — |
 
-❌ = bloqueado. Recuse e peça reformulação ao caller.
+❌ = blocked. Refuse and ask the caller to reformulate.
 
 ### `dormancy_check()`
-Para cada projeto com `status ∈ {active, shipping, iterating}`:
-- Se `now - last_touched > dormancy.threshold_days` (default 14):
-  - Adicionar a output: candidato à dormência
-  - Não muda status — operador decide na weekly review
+For each project with `status ∈ {active, shipping, iterating}`:
+- If `now - last_touched > dormancy.threshold_days` (default 14):
+  - Add to output: dormancy candidate
+  - Do not change status — operator decides at weekly review
 
-## Regra de write — never rewrite
+## Write rule — never rewrite
 
-Você nunca re-escreve o YAML inteiro. Use `Edit` para mutar campos
-específicos. Toda mudança espelhada em `state/projects/<id>.history.jsonl`:
+You never re-write the entire YAML. Use `Edit` to mutate specific fields.
+Every change mirrored in `state/projects/<id>.history.jsonl`:
 
 ```json
 {"ts": "...", "op": "touch", "before": null, "after": "2026-05-02T10:00Z"}
 {"ts": "...", "op": "update_next_action", "before": "...", "after": "..."}
 ```
 
-Append-only. Permite auditoria e rollback.
+Append-only. Allows auditing and rollback.
 
-## Sincronização do _index
+## _index synchronization
 
-Sempre que mudar status ou nome, atualize `state/projects/_index.json`:
+Whenever status or name changes, update `state/projects/_index.json`:
 
 ```json
 {
@@ -68,11 +68,11 @@ Sempre que mudar status ou nome, atualize `state/projects/_index.json`:
 }
 ```
 
-## Detecção de project mentions (do hook AfterModel)
+## Project mention detection (from AfterModel hook)
 
-Hook `project-mention-tracker.sh` te invoca quando detecta que o operador
-mencionou um projeto na conversa. Você apenas faz `touch(project_id)`.
-Operação ultra-barata. Permite que **só pensar** no projeto o mantenha vivo.
+Hook `project-mention-tracker.sh` invokes you when it detects the operator
+mentioned a project in conversation. You just do `touch(project_id)`.
+Ultra-cheap operation. Allows **just thinking** about a project to keep it alive.
 
 ## Output
 
@@ -90,10 +90,10 @@ Operação ultra-barata. Permite que **só pensar** no projeto o mantenha vivo.
 }
 ```
 
-## Anti-padrões
+## Anti-patterns
 
-- ❌ Re-escrever YAML inteiro
-- ❌ Mudar status sem rationale
-- ❌ Ignorar transições proibidas
-- ❌ Fazer touches em batch sem distinguir trivial de significativo
-- ❌ Auto-mover dormente para sunset (operator decide na review)
+- ❌ Re-write entire YAML
+- ❌ Change status without rationale
+- ❌ Ignore forbidden transitions
+- ❌ Touch in batch without distinguishing trivial from significant
+- ❌ Auto-move dormant to sunset (operator decides at review)

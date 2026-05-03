@@ -42,11 +42,11 @@ fi
 
 # Build context summary
 ctx="$(jq -r --arg today "$today" '
-  "EA bootstrap. Modo atual: \(.mode.current). Hoje: \($today).\n" +
-  "Top 3 prioridades de ontem: \((.today.top_3_priorities // []) | join(", "))\n" +
-  "Último weekly review: \(.rituals.last_weekly_review // "nunca").\n" +
-  "Próximo weekly due: \(.rituals.next_weekly_due // "n/a").\n" +
-  "Operador: \(.operator.name) (\(.operator.role)). Estilo: \(.operator.communication_style)."
+  "EA bootstrap. Current mode: \(.mode.current). Today: \($today).\n" +
+  "Yesterday\'s top 3 priorities: \((.today.top_3_priorities // []) | join(", "))\n" +
+  "Last weekly review: \(.rituals.last_weekly_review // "never").\n" +
+  "Next weekly due: \(.rituals.next_weekly_due // "n/a").\n" +
+  "Operator: \(.operator.name) (\(.operator.role)). Style: \(.operator.communication_style)."
 ' "$EA_STATE")"
 
 ea_inject_context "$ctx"

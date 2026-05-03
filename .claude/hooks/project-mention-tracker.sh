@@ -36,7 +36,7 @@ while IFS=$'\t' read -r pid pname; do
 done < <(jq -r '.projects[]? | [.id, .name] | @tsv' "$idx" 2>/dev/null)
 
 if [ ${#touched[@]} -gt 0 ]; then
-  ea_inject_context "[hook project-mention] Projetos tocados: ${touched[*]}"
+  ea_inject_context "[hook project-mention] Projects touched: ${touched[*]}"
   exit 0
 fi
 

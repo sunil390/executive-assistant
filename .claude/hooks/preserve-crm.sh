@@ -18,19 +18,19 @@ out="${snapshot_dir}/precompact-${ts}.md"
 
 {
   printf '# Pre-compaction snapshot — %s\n\n' "$ts"
-  printf '## Modo\n%s\n\n' "$(jq -r '.mode.current' "$EA_STATE")"
-  printf '## Top 3 prioridades\n'
+  printf '## Mode\n%s\n\n' "$(jq -r '.mode.current' "$EA_STATE")"
+  printf '## Top 3 priorities\n'
   jq -r '.today.top_3_priorities[]? | "- \(.)"' "$EA_STATE"
   printf '\n## Operator focus\n'
   jq -r '.operator.current_focus[]? | "- \(.)"' "$EA_STATE"
-  printf '\n## Projetos ativos\n'
+  printf '\n## Active projects\n'
   jq -r '.projects[]? | select(.status == "active" or .status == "shipping" or .status == "iterating") | "- \(.id): \(.name) [\(.status)]"' \
     "${EA_ROOT}/state/projects/_index.json" 2>/dev/null || true
-  printf '\n## Commitments abertos por operador\n'
+  printf '\n## Open commitments by operator\n'
   jq -r '.commitments[]? | select(.status == "open") | "- [\(.id)] \(.description) → \(.counterparty_person_id) (due \(.due.declared // .due.inferred // "?"))"' \
     "${EA_ROOT}/state/commitments/made-by-operator.json" 2>/dev/null || true
 } >"$out"
 
 ea_state_patch '.stats.compression_events = ((.stats.compression_events // 0) + 1)'
 
-ea_inject_context "Contexto será comprimido. Snapshot crítico salvo em ${out}. Após compactação, releia ${out} e state/ea-state.json antes de continuar."
+ea_inject_context "Context will be compacted. Critical snapshot saved to ${out}. After compaction, re-read ${out} and state/ea-state.json before continuing."

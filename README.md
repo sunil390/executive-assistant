@@ -1,22 +1,22 @@
 # Executive Assistant
 
-Chief-of-staff digital sobre Google Workspace. Orquestrador central + subagents
-especializados + skills de workflow + hooks que transformam disciplina executiva
-em infraestrutura.
+Digital chief-of-staff on Google Workspace. Central orchestrator + specialized
+subagents + workflow skills + hooks that turn executive discipline into
+infrastructure.
 
-**Roda nos dois runtimes:**
+**Runs on both runtimes:**
 
-- **Claude Code** — config em `.claude/settings.json`, subagents em `.claude/agents/`
-- **Gemini CLI** — config em `.gemini/settings.json`, subagents nativos em `.gemini/agents/`, policy isolation em `.gemini/policies/ea-policies.toml`
+- **Claude Code** — config in `.claude/settings.json`, subagents in `.claude/agents/`
+- **Gemini CLI** — config in `.gemini/settings.json`, native subagents in `.gemini/agents/`, policy isolation in `.gemini/policies/ea-policies.toml`
 
-Skills, hooks e estado são compartilhados.
+Skills, hooks, and state are shared.
 
-> **Premissa de ambiente:** as skills de Google Workspace (`gdocs`, `gdrive`,
-> `gcalendar`, `gchat`, `gsheets`, `gslides`) já estão disponíveis no runtime
-> do operador (como skill nativa, MCP server, ou extension). Os subagents/skills
-> aqui apenas as compõem.
+> **Environment assumption:** Google Workspace skills (`gdocs`, `gdrive`,
+> `gcalendar`, `gchat`, `gsheets`, `gslides`) are already available in the
+> operator's runtime (as a native skill, MCP server, or extension). The
+> subagents/skills here only compose them.
 
-## Arquitetura — visão de 30 segundos
+## Architecture — 30-second overview
 
 ```
 ORQUESTRADOR (ea-orchestrator skill)
@@ -32,42 +32,42 @@ ORQUESTRADOR (ea-orchestrator skill)
                              AfterTool/AfterModel/PreCompress/SessionEnd  (Gemini CLI)
 ```
 
-Detalhe completo: [ARCHITECTURE.md](./ARCHITECTURE.md).
+Full detail: [ARCHITECTURE.md](./ARCHITECTURE.md).
 
-## Quickstart por runtime
+## Quickstart by runtime
 
-### Rodando no Claude Code
+### Running on Claude Code
 
-1. Abra uma sessão neste diretório.
-2. Edite `state/ea-state.json` com seus dados de operador.
-3. Adicione projetos em `state/projects/<id>.yaml` e atualize `state/projects/_index.json`.
-4. Adicione pessoas-chave em `state/people/<id>.yaml`.
-5. Diga "bom dia" — o hook `bootstrap.sh` carrega estado e infere modo. Para ritual semanal, rode `/weekly-review`.
+1. Open a session in this directory.
+2. Edit `state/ea-state.json` with your operator data.
+3. Add projects in `state/projects/<id>.yaml` and update `state/projects/_index.json`.
+4. Add key people in `state/people/<id>.yaml`.
+5. Say "good morning" — the `bootstrap.sh` hook loads state and infers mode. For the weekly ritual, run `/weekly-review`.
 
-### Rodando no Gemini CLI
+### Running on Gemini CLI
 
-1. Sincronize skills (idempotente):
+1. Sync skills (idempotent):
    ```bash
    ./scripts/sync-runtimes.sh
    ```
-2. Inicie `gemini` neste diretório. `.gemini/settings.json` carrega automaticamente:
-   - **Hooks** (mesmos scripts que Claude Code, referenciados via `$GEMINI_PROJECT_DIR/.claude/hooks/...`)
-   - **Subagents** em `.gemini/agents/` (8 hand-tuned com handoffs estruturados)
-   - **Agent overrides** com `maxTurns`/`maxTimeMinutes` por subagent
-3. Para isolation forte, copie `.gemini/policies/ea-policies.toml` para `~/.gemini/policies/` (ou aponte via setting do Policy Engine). Ele restringe o que cada subagent pode escrever.
-4. Invoque subagent explicitamente: `@meeting-prepper preparar 1:1 com Laiane às 10h` ou deixe a delegação automática decidir.
+2. Start `gemini` in this directory. `.gemini/settings.json` automatically loads:
+   - **Hooks** (same scripts as Claude Code, referenced via `$GEMINI_PROJECT_DIR/.claude/hooks/...`)
+   - **Subagents** in `.gemini/agents/` (8 hand-tuned with structured handoffs)
+   - **Agent overrides** with `maxTurns`/`maxTimeMinutes` per subagent
+3. For strong isolation, copy `.gemini/policies/ea-policies.toml` to `~/.gemini/policies/` (or point via Policy Engine setting). It restricts what each subagent can write.
+4. Invoke a subagent explicitly: `@meeting-prepper prepare 1:1 with Laiane at 10am` or let automatic delegation decide.
 
-### Diferença de orquestração
+### Orchestration difference
 
 | | Claude Code | Gemini CLI |
 |---|---|---|
-| Subagent → subagent | ✅ permitido | ❌ proibido (recursion guard) |
-| Coordenação | subagent ou orquestrador | **sempre** orquestrador |
-| Padrão de output | livre | **handoffs[]** estruturado obrigatório |
+| Subagent → subagent | ✅ allowed | ❌ forbidden (recursion guard) |
+| Coordination | subagent or orchestrator | **always** orchestrator |
+| Output pattern | free | **handoffs[]** structured mandatory |
 
-Os arquivos em `.gemini/agents/` já refletem esse padrão.
+Files in `.gemini/agents/` already reflect this pattern.
 
-## Estrutura de diretórios
+## Directory structure
 
 ```
 .
@@ -128,139 +128,139 @@ Os arquivos em `.gemini/agents/` já refletem esse padrão.
 
 ## Quickstart
 
-1. **Edite `state/ea-state.json`** com seus dados de operador (nome, role,
-   focos atuais). O template já vem preenchido com defaults sensatos.
+1. **Edit `state/ea-state.json`** with your operator data (name, role,
+   current focus). The template ships with sensible defaults.
 
-2. **Adicione projetos ativos** copiando `templates/project.template.yaml` para
-   `state/projects/<id>.yaml` e atualizando `state/projects/_index.json`.
+2. **Add active projects** by copying `templates/project.template.yaml` to
+   `state/projects/<id>.yaml` and updating `state/projects/_index.json`.
 
-3. **Adicione pessoas-chave** (gerente, reportes diretos, mentor, ~10 pessoas
-   prioritárias) copiando `templates/person.template.yaml` para
+3. **Add key people** (manager, direct reports, mentor, ~10 priority people)
+   by copying `templates/person.template.yaml` to
    `state/people/<id>.yaml`.
 
-4. **Verifique hooks**: `chmod +x .claude/hooks/*.sh` (já feito no setup).
+4. **Check hooks**: `chmod +x .claude/hooks/*.sh` (already done on setup).
 
-5. **Inicie uma sessão Claude Code neste diretório**. O hook
-   `bootstrap.sh` carrega seu estado e infere o modo. Se for de manhã,
-   peça `/daily-brief` ou apenas "bom dia".
+5. **Start a Claude Code session in this directory**. The
+   `bootstrap.sh` hook loads your state and infers the mode. If it's morning,
+   ask for `/daily-brief` or just say "good morning".
 
-6. **Sexta ou sábado**: rode `/weekly-review`. Os hooks travam outras skills
-   até o ritual concluir.
+6. **Friday or Saturday**: run `/weekly-review`. Hooks lock other skills
+   until the ritual completes.
 
-## Como o loop funciona
+## How the loop works
 
-### Manhã
+### Morning
 
 ```
 06:30  SessionStart
-   → bootstrap.sh        carrega ea-state.json, detecta hour < 11
-                         e last_morning_brief != hoje → mode = morning_brief
-   → ritual-check.sh     verifica next_weekly_due
+   → bootstrap.sh        loads ea-state.json, detects hour < 11
+                         and last_morning_brief != today → mode = morning_brief
+   → ritual-check.sh     checks next_weekly_due
 
-06:31  Operador: "bom dia"
-   → UserPromptSubmit/mode-context.sh injeta:
-     "Modo morning_brief. Skill recomendada: daily-brief."
+06:31  Operator: "good morning"
+   → UserPromptSubmit/mode-context.sh injects:
+     "Mode morning_brief. Recommended skill: daily-brief."
 
-06:31  ea-orchestrator chama Skill:daily-brief
-   → daily-brief usa gcalendar para listar agenda
-   → delega ao inbox-triager (subagent) classificação de email
-   → delega ao noise-cancel para auto-archive
-   → produz brief de 1 página em state/rituals/daily/2026-05-02.md
+06:31  ea-orchestrator calls Skill:daily-brief
+   → daily-brief uses gcalendar to list agenda
+   → delegates to inbox-triager (subagent) for email classification
+   → delegates to noise-cancel for auto-archive
+   → produces 1-page brief in state/rituals/daily/2026-05-02.md
    → mode → active_day
 ```
 
-### Antes de meeting
+### Before a meeting
 
 ```
-09:55  Webhook calendar (T-30min meeting "1:1 Laiane")
-   → ea-orchestrator detecta proximidade → mode = meeting_prep
-   → invoca Skill:meeting-workflow phase=prep
+09:55  Calendar webhook (T-30min meeting "1:1 Laiane")
+   → ea-orchestrator detects proximity → mode = meeting_prep
+   → invokes Skill:meeting-workflow phase=prep
    → hook check-pending-debriefs.sh:
-     - verifica se há prep sem debrief de meetings anteriores
-     - se houver: BLOQUEIA. operador faz debrief antes.
-   → meeting-prepper subagent gera prep doc (5 seções)
-   → salva em state/rituals/meetings/<event>-prep.md + gdocs
+     - checks if there's a prep without a debrief from previous meetings
+     - if so: BLOCKS. operator completes debrief first.
+   → meeting-prepper subagent generates prep doc (5 sections)
+   → saves to state/rituals/meetings/<event>-prep.md + gdocs
 ```
 
-### Depois de meeting
+### After a meeting
 
 ```
-10:35  Operador cola notas brutas
+10:35  Operator pastes raw notes
    → ea-orchestrator → meeting-workflow phase=debrief
-   → meeting-debriefer extrai DECISÕES, AÇÕES, IMPLÍCITOS
-   → commitment-tracker registra commitments (perguntando antes em implícitos)
-   → project-router roteia ações para projetos
-   → project-tracker atualiza next_action / blockers / decisions
-   → relationship-keeper atualiza last_contact / threads
+   → meeting-debriefer extracts DECISIONS, ACTIONS, IMPLICITS
+   → commitment-tracker registers commitments (asking first for implicits)
+   → project-router routes actions to projects
+   → project-tracker updates next_action / blockers / decisions
+   → relationship-keeper updates last_contact / threads
 ```
 
-### Weekly review (sex/sáb)
+### Weekly review (Fri/Sat)
 
 ```
-SessionStart sex
-   → ritual-check.sh detecta next_weekly_due ≤ hoje
-   → injeta sugestão: "rodar /weekly-review antes de qualquer coisa"
+SessionStart Friday
+   → ritual-check.sh detects next_weekly_due ≤ today
+   → injects suggestion: "run /weekly-review before anything else"
 
-Operador: /weekly-review
+Operator: /weekly-review
    → enter-review-mode.sh sets mode = weekly_review
-   → filter-skills-by-mode.sh trava todas as outras skills
-   → weekly-review skill conduz 7 fases em diálogo
-   → cada fase atualiza estado
-   → ao final: rituals.next_weekly_due = +7d, mode → active_day
+   → filter-skills-by-mode.sh locks all other skills
+   → weekly-review skill conducts 7 phases in dialogue
+   → each phase updates state
+   → at end: rituals.next_weekly_due = +7d, mode → active_day
 ```
 
-### Compactação de contexto (sessões longas)
+### Context compaction (long sessions)
 
 ```
-contexto enche → Claude Code dispara PreCompact
-   → preserve-crm.sh salva snapshot de top-3, projetos ativos, commitments
-     em state/.snapshots/precompact-<ts>.md
-   → injeta: "Após compactação, releia esse arquivo e ea-state.json"
+context fills → Claude Code triggers PreCompact
+   → preserve-crm.sh saves snapshot of top-3, active projects, commitments
+     in state/.snapshots/precompact-<ts>.md
+   → injects: "After compaction, re-read this file and ea-state.json"
 ```
 
-### Fim do dia
+### End of day
 
 ```
 SessionEnd
-   → eod-snapshot.sh gera state/rituals/daily/<date>-eod.md
-   → reseta contadores diários
+   → eod-snapshot.sh generates state/rituals/daily/<date>-eod.md
+   → resets daily counters
    → mode → active_day
 ```
 
-## Princípios operacionais
+## Operational principles
 
-| Princípio | Significado |
+| Principle | Meaning |
 |---|---|
-| Delegate, don't duplicate | Orquestrador coordena; subagents/skills analisam. |
-| Estado externo é fonte da verdade | Memória do modelo é volátil. Releia antes de agir. |
-| Rituais não são opcionais | Hooks tornam pulá-los impossível. |
-| Nada fica sem rota | Todo sinal entra em projeto, pessoa ou backlog explícito. |
-| Toda skill produz decisão ou estado | Resumo é overhead. Mudança de estado é alavancagem. |
-| Calibração contínua | Roteador, filtro de ruído e ritual evoluem por feedback. |
-| Profundidade > velocidade | Use múltiplos turnos. Análise rasa é falha de orquestração. |
-| Resumível por design | Estado em arquivo torna o sistema robusto a interrupções. |
+| Delegate, don't duplicate | Orchestrator coordinates; subagents/skills analyze. |
+| External state is source of truth | Model memory is volatile. Re-read before acting. |
+| Rituals are not optional | Hooks make skipping them impossible. |
+| Nothing stays unrouted | Every signal goes into a project, person, or explicit backlog. |
+| Every skill produces a decision or state change | Summary is overhead. State change is leverage. |
+| Continuous calibration | Router, noise filter, and ritual evolve through feedback. |
+| Depth > speed | Use multiple turns. Shallow analysis is an orchestration failure. |
+| Resumable by design | File-based state makes the system robust to interruptions. |
 
-## Customizando
+## Customizing
 
-- **Modo lock**: edite `filter-skills-by-mode.sh` para adicionar novos modos
-  travados ou suavizar travamentos.
-- **Filtros de ruído**: comece editando `state/ea-state.json :: noise_filters`.
-  A skill `noise-cancel` aprende e propõe ajustes na fase 7 da weekly review.
-- **Cadência de pessoas**: declare em `state/people/<id>.yaml :: cadence` para
-  receber alertas quando o ritmo de contato é violado.
-- **Webhooks**: o disparo automático de `meeting_prep`/`meeting_debrief` baseado
-  no calendário é integração externa (Cloud Function que invoca o orquestrador).
-  Sem ela, o operador chama `/meeting-prep <event_id>` manualmente.
+- **Mode lock**: edit `filter-skills-by-mode.sh` to add new locked modes
+  or soften existing locks.
+- **Noise filters**: start by editing `state/ea-state.json :: noise_filters`.
+  The `noise-cancel` skill learns and proposes adjustments in phase 7 of the weekly review.
+- **People cadence**: declare in `state/people/<id>.yaml :: cadence` to
+  receive alerts when the contact rhythm is violated.
+- **Webhooks**: automatic triggering of `meeting_prep`/`meeting_debrief` based
+  on the calendar is an external integration (Cloud Function that invokes the orchestrator).
+  Without it, the operator calls `/meeting-prep <event_id>` manually.
 
-## O que NÃO está aqui
+## What is NOT here
 
-- Implementação das skills de Google Workspace — são pré-existentes no ambiente.
-- Cloud Function de webhook para auto-disparar fases de meeting.
-- Dashboards/visualização — focado em texto. Adicionar `visual-explainer` skill
-  se quiser HTML.
-- Self-healing avançado para skills que falham — é uma extensão futura sobre
-  `PostToolUse` com `tool_response.error`.
+- Implementation of Google Workspace skills — they are pre-existing in the environment.
+- Cloud Function webhook to auto-trigger meeting phases.
+- Dashboards/visualization — text-focused. Add a `visual-explainer` skill
+  if you want HTML.
+- Advanced self-healing for failing skills — a future extension over
+  `PostToolUse` with `tool_response.error`.
 
-## Licença
+## License
 
-MIT — ver [LICENSE](./LICENSE).
+MIT — see [LICENSE](./LICENSE).

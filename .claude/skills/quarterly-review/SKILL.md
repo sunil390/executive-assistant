@@ -1,49 +1,48 @@
 ---
 name: quarterly-review
-description: Ritual trimestral. Mata projetos dormentes, recalibra north stars, audita filtros de ruído acumulados. Forcing function que bloqueia novo trimestre sem revisão.
+description: Quarterly ritual. Kills dormant projects, recalibrates north stars, audits accumulated noise filters. Forcing function that blocks a new quarter without completing the review.
 allowed-tools: Read, Write, Edit, Bash(jq:*), Bash(date:*), Skill(gdocs), Agent
 ---
 
 # Quarterly Review
 
-Roda 4x ao ano. Hook bloqueia início de novo trimestre (1º dia útil de
-jan/abr/jul/out) sem completar este ritual.
+Runs 4x per year. Hook blocks the start of a new quarter (1st business day of
+Jan/Apr/Jul/Oct) without completing this ritual.
 
-## Fases
+## Phases
 
-### Fase 1 — North stars
-Para cada projeto com status ≠ sunset: `north_star` ainda é verdadeira? Mudou
-o que está em jogo? Operador re-escreve ou confirma cada uma.
+### Phase 1 — North stars
+For each project with status ≠ sunset: is `north_star` still true? Has what's at
+stake changed? Operator re-writes or confirms each one.
 
-### Fase 2 — Sunset bulk
-Projetos com status `dormant` há >60d: confirmar sunset. Mover arquivos para
+### Phase 2 — Bulk sunset
+Projects with status `dormant` for >60d: confirm sunset. Move files to
 `state/projects/_archive/<YYYY-Q>/`.
 
-### Fase 3 — Audit de ruído
-Olhar `noise_filters.learning_log` acumulado do trimestre. Quais padrões foram
-úteis (zero corrections)? Quais foram problemáticos (>10% corrections)?
-Promover/depreciar.
+### Phase 3 — Noise audit
+Look at `noise_filters.learning_log` accumulated over the quarter. Which patterns
+were useful (zero corrections)? Which were problematic (>10% corrections)?
+Promote/deprecate.
 
-### Fase 4 — Cadências de relacionamento
-Para cada `state/people/<id>.yaml` com `cadence.expected_days != null`: o ritmo
-foi cumprido? Pessoas silenciosas há >2x cadência: ressuscitar contato ou
-remover cadência.
+### Phase 4 — Relationship cadences
+For each `state/people/<id>.yaml` with `cadence.expected_days != null`: was the
+cadence maintained? People silent for >2x cadence: revive contact or remove cadence.
 
-### Fase 5 — Padrões emergentes
-Olhar 3 weekly reviews mais recentes. Que padrões aparecem? (Ex: "energia
-sempre baixa quartas". "Projeto X aparece em frustrações há 4 semanas".)
-Operador decide o que fazer.
+### Phase 5 — Emerging patterns
+Look at the 3 most recent weekly reviews. What patterns appear? (E.g.: "energy always
+low on Wednesdays". "Project X has appeared in frustrations for 4 weeks".)
+Operator decides what to do.
 
-### Fase 6 — Próximo trimestre
-Top 3 **iniciativas** (não projetos) do trimestre. Mais bruto que weekly,
-mais granular que anual.
+### Phase 6 — Next quarter
+Top 3 **initiatives** (not projects) for the quarter. Coarser than weekly,
+more granular than annual.
 
 ## Output
 
-`state/rituals/quarterly/<YYYY-QN>.md` com decisões + state mutations
-agrupadas. Anexar ao gdoc de quarterly trimestre no Drive.
+`state/rituals/quarterly/<YYYY-QN>.md` with decisions + state mutations
+grouped. Attach to quarterly gdoc in Drive.
 
-## Atualização final
+## Final state update
 
 ```json
 {

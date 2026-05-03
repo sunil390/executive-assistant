@@ -1,140 +1,140 @@
 ---
 name: meeting-workflow
-description: Coordena ciclo completo de meeting (prep → execute → debrief). Trava avanço pra prep se há debrief pendente da reunião anterior com pessoas em comum. Use 30min antes de meeting ou logo após (hook detecta).
+description: Coordinates the full meeting lifecycle (prep → execute → debrief). Blocks advance to prep if there is a pending debrief for a prior meeting with common participants. Use 30 min before a meeting or immediately after (hook detects).
 allowed-tools: Read, Write, Edit, Bash(jq:*), Bash(date:*), Skill(gcalendar), Skill(gdocs), Agent
 ---
 
 # Meeting Workflow
 
-Reuniões consomem energia desproporcional ao valor entregue. Esta skill
-transforma cada reunião em um ciclo:
+Meetings consume energy disproportionate to value delivered. This skill
+transforms each meeting into a cycle:
 
 ```
-prep (T-30min) → execute (operador) → debrief (T+5min) → action (estado atualizado)
+prep (T-30min) → execute (operator) → debrief (T+5min) → action (state updated)
 ```
 
-## Forcing function crítica
+## Critical forcing function
 
-**Não roda prep se há debrief pendente da reunião anterior com pessoas em comum.**
+**Does not run prep if there is a pending debrief from a prior meeting with common participants.**
 
-Hook `check-pending-debriefs.sh` (PreToolUse) verifica isso. Se houver, esta
-skill recusa e força o debrief antes. Você **nunca chega numa reunião sem ter
-processado a anterior**.
+Hook `check-pending-debriefs.sh` (PreToolUse) checks this. If there is one, this
+skill refuses and forces the debrief first. You **never go into a meeting without
+having processed the previous one**.
 
-## Fase PREP (T-30min antes)
+## PREP Phase (T-30min before)
 
-Delegada ao subagent `meeting-prepper`. Ele produz briefing com 5 partes:
+Delegated to subagent `meeting-prepper`. It produces a briefing with 5 parts:
 
-1. **Quem está na sala** — pra cada participante:
-   - Último contato (canal, data, tópico) de `state/people/<id>.yaml`
-   - Threads abertas relevantes
-   - Contexto pessoal mínimo (cargo, projetos compartilhados)
+1. **Who is in the room** — for each participant:
+   - Last contact (channel, date, topic) from `state/people/<id>.yaml`
+   - Relevant open threads
+   - Minimum personal context (role, shared projects)
 
-2. **Por que esta reunião existe** — objetivo declarado vs objetivo real
-   - Declarado: do convite do calendário
-   - Real: inferido do contexto (último 1:1, projetos ativos compartilhados)
-   - Se diferentes, sinalizar
+2. **Why this meeting exists** — declared objective vs real objective
+   - Declared: from calendar invite
+   - Real: inferred from context (last 1:1, active shared projects)
+   - If different, flag it
 
-3. **O que mudou desde a última** — atualizações em projetos compartilhados
-   - Para cada `project_id` em comum: decisões/blockers desde último encontro
+3. **What changed since the last** — updates in shared projects
+   - For each `project_id` in common: decisions/blockers since last encounter
 
-4. **3 perguntas que valem fazer** — geradas do contexto, não genéricas
-   - Baseadas em `open_decisions` dos projetos compartilhados
-   - Baseadas em commitments pendentes de/para os participantes
+4. **3 questions worth asking** — generated from context, not generic
+   - Based on `open_decisions` from shared projects
+   - Based on pending commitments from/to participants
 
-5. **Resultado desejado** — o que precisa estar verdadeiro ao final
-   - Próxima ação acordada? Decisão tomada? Block desbloqueado?
+5. **Desired outcome** — what needs to be true at the end
+   - Next action agreed? Decision made? Blocker unblocked?
 
-Salvo em `state/rituals/meetings/<event_id>-prep.md` e mirrored em gdocs (anexo
-ao evento via `gcalendar`).
+Saved in `state/rituals/meetings/<event_id>-prep.md` and mirrored in gdocs (attached
+to event via `gcalendar`).
 
-## Fase DEBRIEF (T+5min depois)
+## DEBRIEF Phase (T+5min after)
 
-Delegada ao subagent `meeting-debriefer`. Ele recebe:
+Delegated to subagent `meeting-debriefer`. It receives:
 
-- Notas brutas (do operador no gdocs ou bullets jogados no chat)
-- Transcript (se disponível via Meet)
-- O prep doc gerado anteriormente
+- Raw notes (from operator in gdocs or bullets dropped in chat)
+- Transcript (if available via Meet)
+- The prep doc generated earlier
 
-Ele extrai (não resume — extrai):
+It extracts (not summarizes — extracts):
 
-### Decisões tomadas (≠ tópicos discutidos)
+### Decisions made (≠ topics discussed)
 
-- Decisão concreta + dono + reversibilidade
+- Concrete decision + owner + reversibility
 
-### Ações com dono e prazo
+### Actions with owner and deadline
 
-- Operador: vai pro `commitment-tracker` em `made-by-operator.json`
-- Outros: vai pro `commitment-tracker` em `made-to-operator.json`
-- Por projeto: roteado via subagent `project-router`
+- Operator: goes to `commitment-tracker` in `made-by-operator.json`
+- Others: goes to `commitment-tracker` in `made-to-operator.json`
+- By project: routed via subagent `project-router`
 
-### Promessas implícitas
+### Implicit promises
 
-Esta é a parte sutil. Linguagem como:
+This is the subtle part. Language such as:
 
-- "vou dar uma olhada"
-- "te mando depois"
-- "deixa eu pensar"
-- "podemos conversar sobre isso"
+- "I'll take a look"
+- "I'll send it later"
+- "Let me think about it"
+- "We can talk about that"
 
-**Não vira commitment automaticamente.** O debriefer **pergunta**: "isso é um
-commitment? Pra quando? Pra quem?" Resposta entra em `commitments/implicit.json`
-com confidence apropriada.
+**Does not become a commitment automatically.** The debriefer **asks**: "is this a
+commitment? For when? For whom?" Response goes into `commitments/implicit.json`
+with appropriate confidence.
 
-### Atualizações de relacionamento
+### Relationship updates
 
 - `state/people/<id>.yaml :: last_contact = { date, channel: meeting, topic }`
-- Threads abertas: fechadas se discussão concluiu, novas se surgiram
+- Open threads: closed if discussion concluded, new if they arose
 
-### Atualizações de projeto
+### Project updates
 
-Via `project-router`: cada ação extraída é roteada para um project_id (existente
-ou novo) e o `project-tracker` atualiza `next_action`/`blockers`/`recent_decisions`.
+Via `project-router`: each extracted action is routed to a project_id (existing
+or new) and `project-tracker` updates `next_action`/`blockers`/`recent_decisions`.
 
-## Saída do debrief
+## Debrief output
 
 ```markdown
-# Meeting <título> — <data>
+# Meeting <title> — <date>
 
-## Decisões
-- [DEC-001] X foi decidido por Y, reversível em 7d
+## Decisions
+- [DEC-001] X was decided by Y, reversible in 7d
 
-## Ações
-- [ACT-001] Operador → enviar Z para Pedro até 2026-05-05
-- [ACT-002] Pedro → revisar W até 2026-05-07
+## Actions
+- [ACT-001] Operator → send Z to Pedro by 2026-05-05
+- [ACT-002] Pedro → review W by 2026-05-07
 
-## Implícitos detectados (aguardando confirmação)
-- "vou dar uma olhada na proposta" — pra quem? prazo?
+## Detected implicits (awaiting confirmation)
+- "I'll take a look at the proposal" — for whom? deadline?
 
-## Estado atualizado
-- people/pedro: last_contact, +1 thread aberta
-- projects/gympulse: next_action mudou, +1 decisão
+## State updated
+- people/pedro: last_contact, +1 open thread
+- projects/gympulse: next_action changed, +1 decision
 ```
 
-Salvo em `state/rituals/meetings/<event_id>-debrief.md`.
+Saved in `state/rituals/meetings/<event_id>-debrief.md`.
 
-## Por que essa skill é diferente de "ata automática"
+## Why this skill is different from "auto meeting minutes"
 
-Resumo é overhead. **Estado atualizado é alavancagem.** Cada output da skill
-muda algo concreto:
-- Novo commitment registrado e rastreado
-- Projeto com next_action novo
-- Pessoa com thread atualizada
-- Decisão com data e reversibilidade
+Summary is overhead. **Updated state is leverage.** Every output of the skill
+changes something concrete:
+- New commitment registered and tracked
+- Project with new next_action
+- Person with updated thread
+- Decision with date and reversibility
 
-Resumo de meeting que não muda estado é trabalho ornamental.
+Meeting minutes that don't change state are ornamental work.
 
-## Integração com Google Workspace
+## Google Workspace integration
 
-| Onde | O quê |
+| Where | What |
 |---|---|
-| `gcalendar` | Listar evento, ler descrição/attachees, criar eventos de follow-up |
-| `gdocs` | Ler notas brutas, salvar prep e debrief em Drive |
-| `gchat` | Postar prep doc no espaço da reunião 30min antes (opcional) |
+| `gcalendar` | List event, read description/attendees, create follow-up events |
+| `gdocs` | Read raw notes, save prep and debrief in Drive |
+| `gchat` | Post prep doc in meeting space 30min before (optional) |
 
-## Anti-padrões
+## Anti-patterns
 
-- ❌ Skip do debrief porque "lembro de tudo" — memória decai, estado persiste
-- ❌ Aceitar implícito como commitment automaticamente — ruidoso
-- ❌ Prep genérico ("preparar pauta") — tem que ser específico ao contexto
-- ❌ Debrief que vira ata textual — extrai ações, não transcreve discussão
+- ❌ Skip debrief because "I remember everything" — memory decays, state persists
+- ❌ Accept implicit as commitment automatically — noisy
+- ❌ Generic prep ("prepare agenda") — must be specific to the context
+- ❌ Debrief that becomes a textual transcript — extract actions, don't transcribe discussion

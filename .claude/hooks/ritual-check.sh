@@ -44,13 +44,13 @@ if [ "$quarterly_overdue" = "true" ]; then
                 | .mode.current = \"quarterly_review\"
                 | .mode.since = \"$now_iso\""
   ea_log "ritual-check: forcing quarterly_review"
-  ea_inject_context "⚠️ Quarterly review está atrasado. Modo trocado para quarterly_review. Outras skills ficam bloqueadas até concluir."
+  ea_inject_context "⚠️ Quarterly review is overdue. Mode switched to quarterly_review. Other skills are blocked until complete."
   exit 0
 fi
 
 if [ "$weekly_overdue" = "true" ]; then
-  # Não força automaticamente — pergunta. Mas marca o modo como sugerido.
-  ea_inject_context "⚠️ Weekly review está atrasado (último: ${last_weekly:-nunca}). Sugestão: rodar /weekly-review antes de qualquer outra coisa hoje."
+  # Does not force automatically — asks. But marks mode as suggested.
+  ea_inject_context "⚠️ Weekly review is overdue (last: ${last_weekly:-never}). Suggestion: run /weekly-review before anything else today."
   exit 0
 fi
 

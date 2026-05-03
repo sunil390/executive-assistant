@@ -14,28 +14,28 @@ mode="$(jq -r '.mode.current' "$EA_STATE")"
 
 case "$mode" in
   morning_brief)
-    ctx="Modo: morning_brief. Skill recomendada: daily-brief. Subagents: inbox-triager, project-tracker."
+    ctx="Mode: morning_brief. Recommended skill: daily-brief. Subagents: inbox-triager, project-tracker."
     ;;
   active_day)
-    ctx="Modo: active_day. Operador dirige. Subagents: inbox-triager, project-router, draft-composer, commitment-tracker."
+    ctx="Mode: active_day. Operator drives. Subagents: inbox-triager, project-router, draft-composer, commitment-tracker."
     ;;
   meeting_prep)
-    ctx="Modo: meeting_prep. Foco: meeting-prepper, relationship-keeper. Não comece outro trabalho profundo."
+    ctx="Mode: meeting_prep. Focus: meeting-prepper, relationship-keeper. Do not start other deep work."
     ;;
   meeting_debrief)
-    ctx="Modo: meeting_debrief. Foco: meeting-debriefer, depois commitment-tracker e project-router para rotear ações."
+    ctx="Mode: meeting_debrief. Focus: meeting-debriefer, then commitment-tracker and project-router to route actions."
     ;;
   weekly_review)
-    ctx="Modo: weekly_review. **TRAVADO**. Apenas skill weekly-review. Não responda a triagens, drafts ou outras tarefas até concluir o ritual."
+    ctx="Mode: weekly_review. **LOCKED**. Only skill weekly-review. Do not respond to triages, drafts, or other tasks until the ritual is complete."
     ;;
   quarterly_review)
-    ctx="Modo: quarterly_review. **TRAVADO**. Apenas quarterly-review."
+    ctx="Mode: quarterly_review. **LOCKED**. Only quarterly-review."
     ;;
   end_of_day)
-    ctx="Modo: end_of_day. Foco: revisar commitments due, salvar snapshot, planejar amanhã. Sem deep work novo."
+    ctx="Mode: end_of_day. Focus: review due commitments, save snapshot, plan tomorrow. No new deep work."
     ;;
   *)
-    ctx="Modo desconhecido: $mode. Fallback para active_day."
+    ctx="Unknown mode: $mode. Falling back to active_day."
     ;;
 esac
 
@@ -43,7 +43,7 @@ esac
 implicit_count="$(jq '.commitments | length' "${EA_ROOT}/state/commitments/implicit.json" 2>/dev/null || echo 0)"
 if [ "${implicit_count:-0}" -gt 0 ]; then
   ctx="${ctx}
-${implicit_count} commitment(s) implícito(s) aguardando confirmação."
+${implicit_count} implicit commitment(s) awaiting confirmation."
 fi
 
 ea_inject_context "$ctx"

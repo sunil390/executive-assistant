@@ -1,130 +1,130 @@
 ---
 name: weekly-review
-description: Ritual semanal de 7 fases (40min). Forcing function que hooks tornam impossível pular. Use sex/sáb, ou quando hook ritual-check sinaliza atraso. Trava outras skills enquanto roda.
+description: Weekly ritual with 7 phases (40 min). Forcing function that hooks make impossible to skip. Use Fri/Sat, or when hook ritual-check signals overdue. Locks other skills while running.
 allowed-tools: Read, Write, Edit, Bash(jq:*), Bash(date:*), Skill(gdocs), Skill(gcalendar), Agent
 ---
 
 # Weekly Review
 
-Ritual semanal em 7 fases ordenadas. **Cada fase tem critério de saída.** Não
-avança sem fechar. Hook `enter-review-mode.sh` trava outras skills durante
-a execução.
+Weekly ritual in 7 ordered phases. **Each phase has an exit criterion.** Does not
+advance without closing. Hook `enter-review-mode.sh` locks other skills during
+execution.
 
-## Diagrama
+## Diagram
 
 ```
-Fase 1: COLETA       (5min)  agrega o que aconteceu na semana
-Fase 2: COMMITMENTS  (5min)  review de promessas feitas/recebidas
-Fase 3: PROJECTS     (10min) status de cada projeto ativo
-Fase 4: ENERGIA      (5min)  onde a energia foi vs onde deveria
-Fase 5: PRÓXIMA      (10min) top 3 prioridades da próxima semana
-Fase 6: DORMENTES    (3min)  matar/ressuscitar/aceitar dormência
-Fase 7: NOISE TUNE   (2min)  refinar filtros de ruído
+Phase 1: COLLECT      (5min)  aggregate what happened during the week
+Phase 2: COMMITMENTS  (5min)  review of promises made/received
+Phase 3: PROJECTS     (10min) status of each active project
+Phase 4: ENERGY       (5min)  where energy went vs where it should have
+Phase 5: NEXT WEEK    (10min) top 3 priorities for the coming week
+Phase 6: DORMANT      (3min)  kill/resurrect/accept dormancy
+Phase 7: NOISE TUNE   (2min)  refine noise filters
 ```
 
-## Modo de operação
+## Mode of operation
 
-**Diálogo, não formulário.** Você puxa estado, faz pergunta direcionada,
-espera resposta, atualiza estado. Operador decide; você cataloga.
+**Dialogue, not form.** You pull state, ask a directed question,
+wait for answer, update state. Operator decides; you catalog.
 
-Em cada fase:
-1. Anuncie a fase (`## Fase N: <nome>`)
-2. Apresente o estado relevante (1-2 telas máx)
-3. Faça a **pergunta direcionada** específica da fase
-4. Aplique a decisão (escreva no estado)
-5. Mostre critério de saída atingido antes de passar pra próxima
+For each phase:
+1. Announce the phase (`## Phase N: <name>`)
+2. Present the relevant state (max 1-2 screens)
+3. Ask the **directed question** specific to the phase
+4. Apply the decision (write to state)
+5. Show exit criterion met before moving to next
 
-## Fase 1 — COLETA
+## Phase 1 — COLLECT
 
-**Pergunta direcionada:** "Olha a semana. O que mais te orgulhou? O que mais te frustrou?"
+**Directed question:** "Look at the week. What are you most proud of? What frustrated you most?"
 
-**O que mostrar:**
-- Eventos do `gcalendar` da semana, agrupados por dia
-- Commitments fechados na semana (status: completed)
-- Projetos com `last_touched` na semana
+**What to show:**
+- Events from `gcalendar` for the week, grouped by day
+- Commitments closed this week (status: completed)
+- Projects with `last_touched` this week
 
-**Critério de saída:** operador respondeu, anotação salva em `state/rituals/weekly/<YYYY-WW>.md`.
+**Exit criterion:** operator responded, note saved in `state/rituals/weekly/<YYYY-WW>.md`.
 
-## Fase 2 — COMMITMENTS
+## Phase 2 — COMMITMENTS
 
-**Pergunta direcionada:** "Vamos por essa lista. Para cada um: feito, ainda em pé, ou morreu?"
+**Directed question:** "Let's go through this list. For each one: done, still open, or dead?"
 
-**O que mostrar:**
-- `made-by-operator.json` com status=open, agrupados por contraparte
-- `made-to-operator.json` com status=open, idem
-- `implicit.json` com confidence>=medium
+**What to show:**
+- `made-by-operator.json` with status=open, grouped by counterparty
+- `made-to-operator.json` with status=open, same
+- `implicit.json` with confidence>=medium
 
-**Aplicar:**
-- Status atualizado por commitment
-- Implícitos viram explícitos (confirmar prazo) ou são despromovidos
+**Apply:**
+- Status updated per commitment
+- Implicits become explicit (confirm deadline) or are demoted
 
-**Critério de saída:** zero commitments com status `open` sem prazo definido.
+**Exit criterion:** zero commitments with status `open` without a defined deadline.
 
-## Fase 3 — PROJECTS
+## Phase 3 — PROJECTS
 
-Para cada projeto em `state/projects/*.yaml` com status `active|shipping|iterating`:
+For each project in `state/projects/*.yaml` with status `active|shipping|iterating`:
 
-**Pergunta direcionada:** "<projeto>: status muda? next_action ainda é essa? algo bloqueando?"
+**Directed question:** "<project>: status change? next_action still the same? anything blocking?"
 
-**Aplicar:**
-- `status` (mantém / muda)
-- `next_action` (refina ou substitui)
-- `blockers` (adicionar/remover)
+**Apply:**
+- `status` (keep / change)
+- `next_action` (refine or replace)
+- `blockers` (add/remove)
 - `last_touched = now`
 
-**Critério de saída:** todos projetos active+ visitados, last_touched atualizado.
+**Exit criterion:** all active+ projects visited, last_touched updated.
 
-## Fase 4 — ENERGIA
+## Phase 4 — ENERGY
 
-**Pergunta direcionada:** "Olhando a semana, energia foi pra onde você queria? O que sugou?"
+**Directed question:** "Looking at the week, did energy go where you wanted? What drained you?"
 
-**O que mostrar:**
-- Comparativo: tempo em meetings vs tempo em deep work (do gcalendar)
-- Projetos que receberam touches vs que receberam declarações ("vou olhar")
+**What to show:**
+- Comparison: time in meetings vs time in deep work (from gcalendar)
+- Projects that received touches vs that received declarations ("I'll look at it")
 
-**Aplicar:** ajuste de `operator.energy_pattern` se padrão mudou.
+**Apply:** adjust `operator.energy_pattern` if pattern changed.
 
-**Critério de saída:** uma frase escrita pelo operador no review doc.
+**Exit criterion:** one sentence written by the operator in the review doc.
 
-## Fase 5 — PRÓXIMA
+## Phase 5 — NEXT WEEK
 
-**Pergunta direcionada:** "Próxima semana, se só 3 coisas saírem, quais têm que ser?"
+**Directed question:** "Next week, if only 3 things happen, which ones must they be?"
 
-**Aplicar:**
-- `state/ea-state.json :: today.top_3_priorities` para a próxima segunda
-- Cada uma vinculada a project_id ou commitment_id
+**Apply:**
+- `state/ea-state.json :: today.top_3_priorities` for next Monday
+- Each one linked to a project_id or commitment_id
 
-**Critério de saída:** exatamente 3 prioridades. Nem 4, nem 2.
+**Exit criterion:** exactly 3 priorities. Not 4, not 2.
 
-## Fase 6 — DORMENTES
+## Phase 6 — DORMANT
 
-**O que mostrar:**
-- Projetos com `last_touched > dormancy.threshold_days`
+**What to show:**
+- Projects with `last_touched > dormancy.threshold_days`
 
-**Pergunta direcionada (por projeto):** "Esse aqui: matar (sunset), aceitar dormência, ou ressuscitar?"
+**Directed question (per project):** "This one: kill (sunset), accept dormancy, or resurrect?"
 
-**Aplicar:**
-- `sunset` → `status: sunset`, mover do `_index.json` para arquivo histórico
-- `dormant` → `status: dormant`, mantém arquivo, sai de roteamento ativo
-- `resurrect` → `status: active`, define novo `next_action`
+**Apply:**
+- `sunset` → `status: sunset`, move from `_index.json` to historical archive
+- `dormant` → `status: dormant`, keep file, remove from active routing
+- `resurrect` → `status: active`, define new `next_action`
 
-**Critério de saída:** zero projetos active com last_touched > 14d sem decisão.
+**Exit criterion:** zero active projects with last_touched > 14d without a decision.
 
-## Fase 7 — NOISE TUNE
+## Phase 7 — NOISE TUNE
 
-**O que mostrar:**
-- `noise_filters.learning_log` da semana: itens auto-arquivados que operador resgatou
-- Itens que operador arquivou manualmente que não casavam com nenhum padrão
+**What to show:**
+- `noise_filters.learning_log` for the week: auto-archived items that operator rescued
+- Items operator manually archived that didn't match any pattern
 
-**Pergunta direcionada:** "Esses padrões: adicionar, remover, ou ignorar?"
+**Directed question:** "These patterns: add, remove, or ignore?"
 
-**Aplicar:**
-- Atualizar `auto_archive_patterns`, `auto_defer_patterns`, `vip_senders`
-- Limpar `learning_log`
+**Apply:**
+- Update `auto_archive_patterns`, `auto_defer_patterns`, `vip_senders`
+- Clear `learning_log`
 
-**Critério de saída:** filtros atualizados, log zerado.
+**Exit criterion:** filters updated, log cleared.
 
-## Atualização final
+## Final state update
 
 ```json
 {
@@ -134,17 +134,17 @@ Para cada projeto em `state/projects/*.yaml` com status `active|shipping|iterati
 }
 ```
 
-E gerar/salvar `state/rituals/weekly/<YYYY-WW>.md` com todas as decisões.
+And generate/save `state/rituals/weekly/<YYYY-WW>.md` with all decisions.
 
-## Por que diálogo, não formulário
+## Why dialogue, not form
 
-Formulários são preenchidos no automático. Diálogo força reflexão. Cada
-pergunta direcionada é construída pra evitar resposta mecânica.
+Forms are filled on autopilot. Dialogue forces reflection. Each
+directed question is built to prevent mechanical responses.
 
-## Anti-padrões
+## Anti-patterns
 
-- ❌ Saltar fase ("commitments tá tudo OK, próximo")
-- ❌ Top 5 ao invés de top 3
-- ❌ Aceitar projeto active sem next_action
-- ❌ Pular fase 7 — é onde o sistema aprende
-- ❌ Permitir o operador entrar no inbox no meio do review
+- ❌ Skip a phase ("commitments are all OK, next")
+- ❌ Top 5 instead of top 3
+- ❌ Accept an active project without a next_action
+- ❌ Skip phase 7 — that's where the system learns
+- ❌ Allow the operator to enter the inbox in the middle of the review

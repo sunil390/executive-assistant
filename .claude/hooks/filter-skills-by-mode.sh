@@ -25,7 +25,7 @@ case "$mode" in
       case "$sub" in
         weekly-review|"") ea_passthrough; exit 0 ;;
         *)
-          ea_deny_tool "Modo weekly_review está travado. Apenas a skill 'weekly-review' pode rodar. Tentativa de invocar '$sub' bloqueada. Conclua o ritual antes."
+          ea_deny_tool "Mode weekly_review is locked. Only the 'weekly-review' skill may run. Attempt to invoke '$sub' was blocked. Complete the ritual first."
           exit 0
           ;;
       esac
@@ -36,7 +36,7 @@ case "$mode" in
       case "$sub" in
         quarterly-review|"") ea_passthrough; exit 0 ;;
         *)
-          ea_deny_tool "Modo quarterly_review está travado. Apenas 'quarterly-review' permitida."
+          ea_deny_tool "Mode quarterly_review is locked. Only 'quarterly-review' is allowed."
           exit 0
           ;;
       esac
@@ -47,7 +47,7 @@ case "$mode" in
       case "$sub" in
         meeting-workflow|meeting-prepper|relationship-keeper|"") ea_passthrough; exit 0 ;;
         weekly-review|quarterly-review)
-          ea_deny_tool "Reunião em <30min. Não inicie '$sub' agora. Volte após meeting_debrief."
+          ea_deny_tool "Meeting in <30 min. Do not start '$sub' now. Return after meeting_debrief."
           exit 0
           ;;
       esac

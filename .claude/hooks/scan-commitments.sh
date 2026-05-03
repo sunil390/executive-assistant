@@ -11,7 +11,7 @@ sub="$(ea_payload_sub "$payload")"
 
 case "$sub" in
   meeting-debriefer|draft-composer)
-    ea_inject_context "[hook] $sub rodou. Delegue todo commitment extraído ao commitment-tracker; implícitos não viram commitments sem confirmação humana."
+    ea_inject_context "[hook] $sub ran. Delegate any extracted commitment to commitment-tracker; implicits do not become commitments without human confirmation."
     exit 0
     ;;
 esac

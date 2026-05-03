@@ -17,13 +17,13 @@ if [ -z "$text" ]; then ea_passthrough; exit 0; fi
 
 # Phrase patterns suggesting an implicit operator promise
 patterns=(
-  "vou mandar"
-  "vou ver"
-  "te mando"
-  "vou dar uma olhada"
-  "deixa eu pensar"
-  "podemos conversar"
-  "vou falar com"
+  "I'll send"
+  "I'll check"
+  "I'll send it to you"
+  "I'll take a look"
+  "let me think"
+  "we can talk"
+  "I'll talk to"
   "I'll send"
   "I'll look"
   "I'll get back"
@@ -39,7 +39,7 @@ for p in "${patterns[@]}"; do
 done
 
 if [ -n "$found" ]; then
-  ea_inject_context "[hook promise-detector] Possível promessa implícita detectada: \"$found\". Delegue ao commitment-tracker (add_implicit) e pergunte ao operador se confirma como commitment com prazo."
+  ea_inject_context "[hook promise-detector] Possible implicit promise detected: \"$found\". Delegate to commitment-tracker (add_implicit) and ask the operator whether to confirm as a commitment with a deadline."
   exit 0
 fi
 

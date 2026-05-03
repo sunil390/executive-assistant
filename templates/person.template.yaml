@@ -1,12 +1,12 @@
-id: ""                       # slug, ex: "laiane"
+id: ""                       # slug, e.g.: "laiane"
 name: ""
 role: ""
-relationship: ""             # colega | gestor | reporte | cliente | parceiro | familiar
+relationship: ""             # colleague | manager | report | client | partner | family
 gworkspace_email: ""
 
-context: ""                  # 1-2 frases: o que esta pessoa significa pro operador
+context: ""                  # 1-2 sentences: what this person means to the operator
 
-projects:                    # projetos compartilhados (match com state/projects/)
+projects:                    # shared projects (match with state/projects/)
   - id: ""
     role: ""
 
@@ -15,15 +15,15 @@ last_contact:
   channel: ""                # email | gchat | meeting | call | in-person
   topic: ""
 
-open_threads: []             # conversas em aberto que precisam fechar
-# - { since: "2026-04-20", topic: "feedback design X", next_step: "..." }
+open_threads: []             # open conversations that need to close
+# - { since: "2026-04-20", topic: "design X feedback", next_step: "..." }
 
 commitments:
-  by_operator_to_them: []    # IDs em commitments/made-by-operator.json
-  by_them_to_operator: []    # IDs em commitments/made-to-operator.json
+  by_operator_to_them: []    # IDs in commitments/made-by-operator.json
+  by_them_to_operator: []    # IDs in commitments/made-to-operator.json
 
-cadence:                     # ritmo esperado de contato
-  expected_days: null        # ex: 14 = a cada 2 semanas
-  last_warned: null          # quando o EA avisou que tava silencioso demais
+cadence:                     # expected contact rhythm
+  expected_days: null        # e.g.: 14 = every 2 weeks
+  last_warned: null          # when the EA warned that silence had gone on too long
 
-notes: ""                    # contexto pessoal: aniversário, contexto familiar, prefs
+notes: ""                    # personal context: birthday, family context, preferences

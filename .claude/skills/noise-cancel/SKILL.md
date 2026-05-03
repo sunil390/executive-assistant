@@ -1,39 +1,39 @@
 ---
 name: noise-cancel
-description: Filtra ruído de inboxes (Gmail, Google Chat) em três níveis — puro, contextual, sinal disfarçado. Aprende com correções. Use no morning_brief antes de qualquer triagem profunda.
+description: Filters inbox noise (Gmail, Google Chat) at three levels — pure, contextual, disguised signal. Learns from corrections. Use in morning_brief before any deep triage.
 allowed-tools: Read, Write, Edit, Bash(jq:*), Skill(gchat), Agent
 ---
 
 # Noise Cancel
 
-A maioria dos sistemas de email é binária (importante / não). Esta skill é
-ternária — o estágio do meio (`contextual`) é onde mora o valor real.
+Most email systems are binary (important / not). This skill is
+ternary — the middle stage (`contextual`) is where the real value lives.
 
-## Os três níveis
+## The three levels
 
-| Nível | Critério | Ação |
+| Level | Criterion | Action |
 |---|---|---|
-| **Ruído puro** | Newsletter não-aberta há 30d, notificação automática, FYI puro | Auto-archive, sem reportar |
-| **Ruído contextual** | Pode importar em outro momento (oferta de curso, evento, paper) | Defer para weekly review (fase 1) |
-| **Sinal disfarçado** | Sender em `vip_senders` OU contém `vip_keywords` OU é resposta a thread aberta | Promover para triagem profunda |
+| **Pure noise** | Newsletter unopened for 30d, automatic notification, pure FYI | Auto-archive, without reporting |
+| **Contextual noise** | May matter later (course offer, event, paper) | Defer to weekly review (phase 1) |
+| **Disguised signal** | Sender in `vip_senders` OR contains `vip_keywords` OR is reply to open thread | Promote to deep triage |
 
-A skill **não deleta nada**. Ela move pra buckets. Operador valida edge cases.
+The skill **deletes nothing**. It moves to buckets. Operator validates edge cases.
 
-## Fluxo
+## Flow
 
-### Passo 1 — Carregar filtros aprendidos
+### Step 1 — Load learned filters
 
 ```bash
 cat state/ea-state.json | jq '.noise_filters'
 ```
 
-Padrões em `auto_archive_patterns` e `auto_defer_patterns` são tratados como regex.
-`vip_senders` e `vip_keywords` são overrides (sempre promovem).
+Patterns in `auto_archive_patterns` and `auto_defer_patterns` are treated as regex.
+`vip_senders` and `vip_keywords` are overrides (always promote).
 
-### Passo 2 — Classificar (em batch via subagent inbox-triager)
+### Step 2 — Classify (in batch via subagent inbox-triager)
 
-Delegue ao subagent `inbox-triager` com modo=`noise_first_pass`. Ele recebe a
-lista de mensagens (do gchat/gmail) e devolve:
+Delegate to subagent `inbox-triager` with mode=`noise_first_pass`. It receives the
+list of messages (from gchat/gmail) and returns:
 
 ```json
 {
@@ -44,25 +44,25 @@ lista de mensagens (do gchat/gmail) e devolve:
 }
 ```
 
-**Regra:** se qualquer item bate em `vip_*`, vai pra `disguised_signal` mesmo que
-também bata num padrão de archive. Override sempre vence.
+**Rule:** if any item matches `vip_*`, it goes to `disguised_signal` even if it
+also matches an archive pattern. Override always wins.
 
-### Passo 3 — Aplicar ações
+### Step 3 — Apply actions
 
-- `pure_noise` → arquivar via `gchat`/gmail skill, registrar id em `learning_log` com `action: archived`
-- `contextual` → mover pra label "EA/Defer" (gmail) ou flag deferido, registrar
-- `disguised_signal` → deixar inbox, sinaliza pro operador na próxima triagem
-- `uncertain` → pergunta ao operador (máx 5 por sessão; resto vai pra `contextual`)
+- `pure_noise` → archive via `gchat`/gmail skill, log id in `learning_log` with `action: archived`
+- `contextual` → move to label "EA/Defer" (gmail) or flag deferred, log it
+- `disguised_signal` → leave in inbox, flag for operator at next triage
+- `uncertain` → ask the operator (max 5 per session; rest goes to `contextual`)
 
-### Passo 4 — Aprender
+### Step 4 — Learn
 
-Toda vez que:
-- Operador **resgata** um item de `pure_noise` → adicionar exceção (sender ou keyword) a `vip_*`
-- Operador **arquiva manualmente** um item que não bateu em padrão → propor novo padrão na próxima weekly
+Every time:
+- Operator **rescues** an item from `pure_noise` → add exception (sender or keyword) to `vip_*`
+- Operator **manually archives** an item that didn't match any pattern → propose new pattern at next weekly
 
-Hook `PostToolUse` em ações de inbox alimenta `learning_log` automaticamente.
+Hook `PostToolUse` on inbox actions feeds `learning_log` automatically.
 
-## Estado: noise_filters
+## State: noise_filters
 
 ```json
 {
@@ -72,7 +72,7 @@ Hook `PostToolUse` em ações de inbox alimenta `learning_log` automaticamente.
     "list-id:.*newsletter.*"
   ],
   "auto_defer_patterns": [
-    "subject:.*(curso|webinar|treinamento).*"
+    "subject:.*(course|webinar|training).*"
   ],
   "vip_senders": ["laiane@", "boss@google.com"],
   "vip_keywords": ["GymPulse", "mainframe-skills", "urgent"],
@@ -88,19 +88,19 @@ Hook `PostToolUse` em ações de inbox alimenta `learning_log` automaticamente.
 }
 ```
 
-## Calibração
+## Calibration
 
-Critério de saúde: **precision > 0.95 em pure_noise**. Se operador resgatou >5%
-do que foi auto-arquivado nos últimos 7 dias, a skill **pausa o auto-archive**
-e pede tuning na próxima weekly review.
+Health criterion: **precision > 0.95 in pure_noise**. If operator rescued >5%
+of what was auto-archived in the last 7 days, the skill **pauses auto-archive**
+and requests tuning at next weekly review.
 
-Hook `PostToolUse` calcula esse rate. Se >5%, escreve em
-`state/ea-state.json :: stats.noise_cancel_health = "needs_tuning"` e a skill
-recusa rodar até a fase 7 da próxima review.
+Hook `PostToolUse` calculates this rate. If >5%, writes
+`state/ea-state.json :: stats.noise_cancel_health = "needs_tuning"` and the skill
+refuses to run until phase 7 of the next review.
 
-## Anti-padrões
+## Anti-patterns
 
-- ❌ Deletar (irreversível). Sempre arquivar.
-- ❌ Aprender em silêncio. Toda mudança de filtro passa por weekly review fase 7.
-- ❌ Tratar VIP como soft signal. VIP override sempre.
-- ❌ "Importante" sem mais qualificação. Importante pra quê? Pra qual projeto?
+- ❌ Delete (irreversible). Always archive.
+- ❌ Learn silently. Every filter change goes through weekly review phase 7.
+- ❌ Treat VIP as soft signal. VIP override always.
+- ❌ "Important" without further qualification. Important for what? For which project?

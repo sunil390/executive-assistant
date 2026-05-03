@@ -26,4 +26,4 @@ if [ "$current" != "$target_mode" ]; then
   ea_log "enter-review: $current -> $target_mode"
 fi
 
-ea_inject_context "Entrando em modo $target_mode. Outras skills ficam bloqueadas até concluir o ritual. Não responda triagens, drafts ou status updates de projeto neste contexto."
+ea_inject_context "Entering mode $target_mode. Other skills are locked until the ritual is complete. Do not respond to triages, drafts, or project status updates in this context."

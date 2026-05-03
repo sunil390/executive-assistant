@@ -1,27 +1,27 @@
-id: ""                       # slug-curto, usado como filename
-name: ""                     # nome humano
+id: ""                       # short slug, used as filename
+name: ""                     # human-readable name
 status: incubating           # incubating | active | shipping | iterating | dormant | sunset
-north_star: ""               # 1 frase: o que precisa estar verdadeiro pra projeto valer a pena
-next_action: ""              # próxima ação concreta, ≤1 dia de trabalho
-blockers: []                 # bloqueios conhecidos
-open_decisions: []           # decisões pendentes que destravam o projeto
+north_star: ""               # 1 sentence: what needs to be true for the project to be worthwhile
+next_action: ""              # concrete next action, ≤1 day of work
+blockers: []                 # known blockers
+open_decisions: []           # pending decisions that unblock the project
 
-stakeholders:                # quem importa pro projeto
-  - id: ""                   # match com state/people/<id>.yaml
+stakeholders:                # who matters to the project
+  - id: ""                   # match with state/people/<id>.yaml
     role: ""
     interest: ""
 
-last_touched: null           # ISO timestamp da última atividade
+last_touched: null           # ISO timestamp of last activity
 created_at: null
 target_completion: null
 
-recent_decisions: []         # ADRs informais
+recent_decisions: []         # informal ADRs
 # - { date: "2026-04-28", decision: "...", rationale: "...", reversible: true }
 
 artifacts: []                # links: gdocs, gdrive, github, figma, etc
 
-related_projects: []         # outros projetos que dependem ou bloqueiam este
+related_projects: []         # other projects that depend on or block this one
 
 dormancy:
-  threshold_days: 14         # após N dias sem touch → router pergunta status
+  threshold_days: 14         # after N days without touch → router asks for status
   warned_at: null

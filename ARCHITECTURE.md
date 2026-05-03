@@ -1,27 +1,27 @@
-# Executive Assistant — Arquitetura
+# Executive Assistant — Architecture
 
-> Chief-of-staff digital sobre Google Workspace. Orquestrador central, subagents
-> especializados, skills de workflow e hooks que transformam disciplina executiva
-> em infraestrutura.
+> Digital chief-of-staff on Google Workspace. Central orchestrator, specialized
+> subagents, workflow skills and hooks that turn executive discipline into
+> infrastructure.
 
-## 1. Filosofia
+## 1. Philosophy
 
-Três coisas que diferenciam um EA de uma automação genérica:
+Three things that differentiate an EA from generic automation:
 
-1. **Noise canceling** — filtra ruído **antes** que chegue ao operador.
-2. **Continuity** — mantém contexto entre dias, projetos e pessoas. O operador
-   nunca re-explica o que já decidiu.
-3. **Forcing functions** — impõe rituais (weekly review, sub-project routing,
-   debrief pós-meeting) que o operador sozinho falharia em manter.
+1. **Noise canceling** — filters noise **before** it reaches the operator.
+2. **Continuity** — maintains context across days, projects, and people. The operator
+   never re-explains what was already decided.
+3. **Forcing functions** — enforces rituals (weekly review, sub-project routing,
+   post-meeting debrief) that the operator would fail to maintain alone.
 
-Divisão de responsabilidades:
+Division of responsibilities:
 
-- **Skills** fazem o trabalho cognitivo de workflow (rituais, briefs).
-- **Subagents** fazem o trabalho cognitivo isolado e profundo (triagem, drafting).
-- **Hooks** impõem disciplina operacional (estado, gates, modo).
-- **Orquestrador** decide o quê, quando e pra quem.
+- **Skills** do the cognitive workflow work (rituals, briefs).
+- **Subagents** do isolated, deep cognitive work (triaging, drafting).
+- **Hooks** enforce operational discipline (state, gates, mode).
+- **Orchestrator** decides what, when, and to whom.
 
-## 2. Tipologia das Camadas
+## 2. Layer Typology
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
@@ -54,24 +54,24 @@ Divisão de responsabilidades:
             Stop · PreCompact · SessionEnd
 ```
 
-### Skill vs. Subagent — quando usar cada um
+### Skill vs. Subagent — when to use each
 
-| Critério | Skill | Subagent |
+| Criterion | Skill | Subagent |
 |---|---|---|
-| Loop multi-fase com gates | ✅ | ❌ |
-| Cognição profunda em um turno | ❌ | ✅ |
+| Multi-phase loop with gates | ✅ | ❌ |
+| Deep cognition in one turn | ❌ | ✅ |
 | Forcing function (ritual) | ✅ | ❌ |
-| Composição de várias ferramentas | ✅ | ✅ |
-| Contexto isolado (não polui main) | ❌ | ✅ |
-| Invocado pelo operador (`/weekly-review`) | ✅ | indireto |
-| Invocado por outra skill | ✅ | ✅ |
+| Composition of multiple tools | ✅ | ✅ |
+| Isolated context (doesn't pollute main) | ❌ | ✅ |
+| Invoked by operator (`/weekly-review`) | ✅ | indirect |
+| Invoked by another skill | ✅ | ✅ |
 
-Regra prática: **skills coreografam, subagents executam**.
+Practical rule: **skills choreograph, subagents execute**.
 
-## 3. Estado Persistente
+## 3. Persistent State
 
-Tudo escrito em `state/` na raiz do repositório. Arquivos pequenos, JSON/YAML,
-fáceis de auditar e versionar.
+Everything written to `state/` at the repository root. Small files, JSON/YAML,
+easy to audit and version.
 
 ```
 state/
@@ -91,151 +91,151 @@ state/
     └── quarterly/<YYYY-QN>.md # quarterly reviews
 ```
 
-**Regra dura:** todo subagent que muta estado o faz via patch JSON, nunca
-re-escreve o arquivo inteiro. Hooks `PostToolUse` aplicam o patch.
+**Hard rule:** every subagent that mutates state does so via JSON patch, never
+re-writing the entire file. `PostToolUse` hooks apply the patch.
 
-## 4. Modos do Orquestrador
+## 4. Orchestrator Modes
 
-O orquestrador opera em modos. Cada modo restringe quais skills/subagents
-ficam disponíveis. Hooks `UserPromptSubmit` e `PreToolUse` enforçam.
+The orchestrator operates in modes. Each mode restricts which skills/subagents
+are available. `UserPromptSubmit` and `PreToolUse` hooks enforce this.
 
-| Modo | Quando | Skills disponíveis |
+| Mode | When | Available skills |
 |---|---|---|
-| `morning_brief` | 06:00–09:00 ou primeiro prompt do dia | daily-brief, noise-cancel |
-| `active_day` | dia útil normal | inbox-triager, project-router, draft-composer, meeting-workflow |
-| `meeting_prep` | T-30min antes de evento no gcalendar | meeting-prepper, relationship-keeper |
-| `meeting_debrief` | T+5min após evento | meeting-debriefer, commitment-tracker |
-| `weekly_review` | sex/sáb se atrasado >7d | **só** weekly-review (trava outras) |
-| `quarterly_review` | trimestral | **só** quarterly-review |
+| `morning_brief` | 06:00–09:00 or first prompt of the day | daily-brief, noise-cancel |
+| `active_day` | normal business day | inbox-triager, project-router, draft-composer, meeting-workflow |
+| `meeting_prep` | T-30min before a gcalendar event | meeting-prepper, relationship-keeper |
+| `meeting_debrief` | T+5min after an event | meeting-debriefer, commitment-tracker |
+| `weekly_review` | Fri/Sat if overdue >7d | **only** weekly-review (locks others) |
+| `quarterly_review` | quarterly | **only** quarterly-review |
 | `end_of_day` | 18:00+ | eod-snapshot, commitment review |
 
-## 5. Hooks — Mapeamento Claude Code
+## 5. Hooks — Claude Code Mapping
 
-A semântica do Gemini CLI mapeia em Claude Code assim:
+Gemini CLI semantics map to Claude Code like this:
 
-| Gemini CLI       | Claude Code        | Função no EA |
+| Gemini CLI       | Claude Code        | Role in EA |
 |---|---|---|
-| SessionStart     | SessionStart       | Bootstrap de estado, ritual check |
-| BeforeAgent      | UserPromptSubmit   | Injeta contexto do modo, força ritual atrasado |
-| BeforeModel      | UserPromptSubmit   | (mesmo evento, ações distintas no script) |
-| BeforeToolSelection | PreToolUse      | Filtro de skill/subagent por modo |
-| BeforeTool       | PreToolUse         | Validação de pré-condições da skill |
-| AfterTool        | PostToolUse        | Atualiza estado, scan de commitments |
-| AfterModel       | Stop               | Detecta promessas implícitas, project mentions |
-| PreCompress      | PreCompact         | Preserva CRM e ADRs |
+| SessionStart     | SessionStart       | State bootstrap, ritual check |
+| BeforeAgent      | UserPromptSubmit   | Injects mode context, forces overdue ritual |
+| BeforeModel      | UserPromptSubmit   | (same event, distinct actions in the script) |
+| BeforeToolSelection | PreToolUse      | Skill/subagent filter by mode |
+| BeforeTool       | PreToolUse         | Skill precondition validation |
+| AfterTool        | PostToolUse        | Updates state, scans commitments |
+| AfterModel       | Stop               | Detects implicit promises, project mentions |
+| PreCompress      | PreCompact         | Preserves CRM and ADRs |
 | SessionEnd       | SessionEnd         | EOD snapshot |
 
-## 6. Loop Diário (Exemplo)
+## 6. Daily Loop (Example)
 
 ```
 06:30  SessionStart
-       └─ bootstrap.sh        carrega ea-state.json
-       └─ ritual-check.sh     "weekly review atrasado 8d → modo=weekly_review"
-                              OU "modo=morning_brief, daily-brief pendente"
+       └─ bootstrap.sh        loads ea-state.json
+       └─ ritual-check.sh     "weekly review overdue 8d → mode=weekly_review"
+                              OR "mode=morning_brief, daily-brief pending"
 
-06:31  UserPromptSubmit ("bom dia")
-       └─ mode-context.sh     injeta contexto do modo + 3 prioridades de ontem
+06:31  UserPromptSubmit ("good morning")
+       └─ mode-context.sh     injects mode context + yesterday's top 3
 
 06:32  /daily-brief           skill ea-orchestrator → daily-brief
-       ├─ chama gcalendar     lista eventos hoje
-       ├─ chama subagent inbox-triager  classifica novos emails
-       ├─ chama noise-cancel  arquiva ruído puro
-       └─ produz brief de 1 página em state/rituals/daily/2026-05-02.md
+       ├─ calls gcalendar     lists today's events
+       ├─ calls subagent inbox-triager  classifies new emails
+       ├─ calls noise-cancel  archives pure noise
+       └─ produces 1-page brief in state/rituals/daily/2026-05-02.md
 
-09:55  webhook calendar (T-30min meeting "1:1 Laiane")
-       └─ hook agenda meeting_prep mode
-       └─ subagent meeting-prepper roda automaticamente
+09:55  calendar webhook (T-30min meeting "1:1 Laiane")
+       └─ hook schedules meeting_prep mode
+       └─ subagent meeting-prepper runs automatically
 
-10:30  meeting acontece (operador toma notas brutas no gdocs)
+10:30  meeting happens (operator takes raw notes in gdocs)
 
-10:35  webhook calendar (evento terminou)
-       └─ subagent meeting-debriefer → extrai ações
-       └─ commitment-tracker registra "vou mandar o doc Y pra Laiane sex"
-       └─ project-router roteia ações para projetos certos
+10:35  calendar webhook (event ended)
+       └─ subagent meeting-debriefer → extracts actions
+       └─ commitment-tracker registers "I'll send doc Y to Laiane Friday"
+       └─ project-router routes actions to the right projects
 
 18:30  SessionEnd
-       └─ eod-snapshot.sh     resume dia, fecha state, agenda manhã
+       └─ eod-snapshot.sh     summarizes day, closes state, schedules morning
 ```
 
-## 7. Princípios Operacionais
+## 7. Operational Principles
 
-| Princípio | Significado |
+| Principle | Meaning |
 |---|---|
-| Delegate, don't duplicate | Orquestrador coordena; subagents/skills analisam. |
-| Estado externo é fonte da verdade | Memória do modelo é volátil. Sempre releia o estado. |
-| Rituais não são opcionais | Hooks tornam pulá-los impossível. |
-| Nada fica sem rota | Todo sinal entra em projeto, pessoa ou backlog. Órfão = falha. |
-| Toda skill produz decisão ou estado | Resumo é overhead. Mudança de estado é alavancagem. |
-| Calibração contínua | Roteador, filtro de ruído e ritual evoluem por feedback. |
-| Profundidade > velocidade | Use múltiplos turnos. Análise rasa é falha de orquestração. |
-| Resumível por design | Estado em arquivo torna o sistema robusto a interrupções. |
+| Delegate, don't duplicate | Orchestrator coordinates; subagents/skills analyze. |
+| External state is source of truth | Model memory is volatile. Always re-read state. |
+| Rituals are not optional | Hooks make skipping them impossible. |
+| Nothing stays unrouted | Every signal goes into a project, person, or backlog. Orphan = failure. |
+| Every skill produces a decision or state change | Summary is overhead. State change is leverage. |
+| Continuous calibration | Router, noise filter, and ritual evolve through feedback. |
+| Depth > speed | Use multiple turns. Shallow analysis is an orchestration failure. |
+| Resumable by design | File-based state makes the system robust to interruptions. |
 
-## 8. Anti-padrões
+## 8. Anti-patterns
 
-- **Skill que só resume.** Resumo sem mudança de estado é trabalho ornamental.
-- **Subagent que escreve direto no estado raiz.** Sempre via patch + hook.
-- **Hook lento (>500ms).** Bloqueia o loop. Faça async se precisar pesar.
-- **Forcing function que pode ser pulada.** Se "lembre-me" não funciona, vire bloqueio.
-- **Auto-archive sem trilha.** Ruído arquivado precisa ser auditável.
-- **Roteador silencioso.** A cada N rotas, pede contra-prova ao operador.
+- **Skill that only summarizes.** Summary without state change is ornamental work.
+- **Subagent that writes directly to root state.** Always via patch + hook.
+- **Slow hook (>500ms).** Blocks the loop. Go async if heavy processing is needed.
+- **Forcing function that can be skipped.** If "remind me" doesn't work, make it a blocker.
+- **Auto-archive without an audit trail.** Archived noise must be auditable.
+- **Silent router.** Every N routes, ask the operator for spot-check confirmation.
 
-## 9. Escopo do MVP neste repositório
+## 9. Scope of this repository's MVP
 
-Este repositório implementa:
+This repository implements:
 
-- `state/` schemas + um state inicial seed
-- `.claude/skills/` 6 skills de workflow (canônicas)
+- `state/` schemas + an initial seed state
+- `.claude/skills/` 6 workflow skills (canonical)
 - `.claude/agents/` 8 subagents (Claude Code)
-- `.claude/hooks/` 12 scripts de disciplina (compartilhados — payload-detect ambos runtimes)
-- `.claude/settings.json` wiring completo Claude Code
-- `.gemini/skills/` espelhado de `.claude/skills/` via `scripts/sync-runtimes.sh`
-- `.gemini/agents/` 8 subagents nativos Gemini CLI (frontmatter + handoffs estruturados)
-- `.gemini/policies/ea-policies.toml` regras de Policy Engine isolando o que cada subagent pode escrever
-- `.gemini/settings.json` wiring Gemini CLI (eventos diferentes, mesmos scripts)
+- `.claude/hooks/` 12 discipline scripts (shared — payload-detect both runtimes)
+- `.claude/settings.json` full Claude Code wiring
+- `.gemini/skills/` mirrored from `.claude/skills/` via `scripts/sync-runtimes.sh`
+- `.gemini/agents/` 8 native Gemini CLI subagents (frontmatter + structured handoffs)
+- `.gemini/policies/ea-policies.toml` Policy Engine rules isolating what each subagent can write
+- `.gemini/settings.json` Gemini CLI wiring (different events, same scripts)
 
-O que **não** está aqui (depende do ambiente):
+What is **not** here (depends on the environment):
 
-- Skills pré-existentes de Google Workspace (gdocs, gdrive, gcalendar, gchat,
-  gsheets, gslides). Os subagents/skills aqui assumem que estão disponíveis.
-- Webhook do Google Calendar para disparar `meeting_prep`/`meeting_debrief`
-  automaticamente — integração externa que invoca o orquestrador.
+- Pre-existing Google Workspace skills (gdocs, gdrive, gcalendar, gchat,
+  gsheets, gslides). The subagents/skills here assume they are available.
+- Google Calendar webhook to trigger `meeting_prep`/`meeting_debrief`
+  automatically — an external integration that invokes the orchestrator.
 
 ## 10. Dual runtime — Claude Code & Gemini CLI
 
-A mesma stack (skills + subagents + hooks) roda nos dois runtimes. Diferenças
-ficam isoladas em três lugares: settings, nomes de eventos de hook, e a forma
-como subagents devolvem trabalho ao orquestrador.
+The same stack (skills + subagents + hooks) runs on both runtimes. Differences
+are isolated in three places: settings, hook event names, and how subagents
+return work to the orchestrator.
 
-### 10.1 Mapeamento de eventos de hook
+### 10.1 Hook event mapping
 
-| Evento Gemini CLI    | Evento Claude Code  | Script (canônico em `.claude/hooks/`) |
+| Gemini CLI event     | Claude Code event   | Script (canonical in `.claude/hooks/`) |
 |----------------------|---------------------|--------------------------------------|
 | SessionStart         | SessionStart        | bootstrap.sh, ritual-check.sh         |
 | BeforeAgent          | UserPromptSubmit    | mode-context.sh                       |
-| BeforeModel          | UserPromptSubmit    | (compartilha; usado raramente)        |
+| BeforeModel          | UserPromptSubmit    | (shared; rarely used)                 |
 | BeforeToolSelection  | PreToolUse          | filter-skills-by-mode.sh              |
 | BeforeTool           | PreToolUse          | check-pending-debriefs.sh, enter-review-mode.sh |
 | AfterTool            | PostToolUse         | touch-projects.sh, scan-commitments.sh |
 | AfterModel           | Stop                | promise-detector.sh, project-mention-tracker.sh |
 | PreCompress          | PreCompact          | preserve-crm.sh                       |
 | SessionEnd           | SessionEnd          | eod-snapshot.sh                       |
-| Notification         | Notification        | (não usado no MVP)                    |
+| Notification         | Notification        | (not used in MVP)                     |
 
-`lib/common.sh` resolve `EA_ROOT` de `CLAUDE_PROJECT_DIR` ou `GEMINI_PROJECT_DIR`
-e expõe helpers (`ea_payload_tool_name`, `ea_payload_sub`, `ea_payload_last_text`)
-que normalizam payloads (camelCase do Gemini vs snake_case do Claude Code).
+`lib/common.sh` resolves `EA_ROOT` from `CLAUDE_PROJECT_DIR` or `GEMINI_PROJECT_DIR`
+and exposes helpers (`ea_payload_tool_name`, `ea_payload_sub`, `ea_payload_last_text`)
+that normalize payloads (Gemini's camelCase vs Claude Code's snake_case).
 
-### 10.2 Diferença crítica: subagents Gemini não recursionam
+### 10.2 Critical difference: Gemini subagents cannot recurse
 
-Doc oficial Gemini CLI:
+Official Gemini CLI docs:
 > "Recursion protection: To prevent infinite loops and excessive token usage,
 > subagents cannot call other subagents."
 
-Em Claude Code subagents podem se chamar (via Skill/Agent tools). Em Gemini
-CLI **não**. O orquestrador (main agent) é quem coordena handoffs.
+In Claude Code, subagents can call each other (via Skill/Agent tools). In Gemini
+CLI they **cannot**. The orchestrator (main agent) is the one who coordinates handoffs.
 
-**Padrão obrigatório nos subagents Gemini:** devolver um campo `handoffs[]`
-no output que o orquestrador lê e despacha. Exemplo do `meeting-debriefer`:
+**Mandatory pattern in Gemini subagents:** return a `handoffs[]` field in the
+output that the orchestrator reads and dispatches. Example from `meeting-debriefer`:
 
 ```json
 {
@@ -250,47 +250,47 @@ no output que o orquestrador lê e despacha. Exemplo do `meeting-debriefer`:
 }
 ```
 
-O orquestrador executa os handoffs em ordem. Em Claude Code, esse padrão também
-funciona, mas o subagent ainda **pode** invocar outro diretamente se preciso.
+The orchestrator executes handoffs in order. In Claude Code this pattern also
+works, but the subagent can still **directly** invoke another if needed.
 
-### 10.3 Mapeamento de tools
+### 10.3 Tool mapping
 
-Subagents declaram tools no frontmatter. Nomes diferem:
+Subagents declare tools in the frontmatter. Names differ:
 
-| Capacidade        | Claude Code          | Gemini CLI                 |
+| Capability        | Claude Code          | Gemini CLI                 |
 |-------------------|----------------------|----------------------------|
 | Read file         | `Read`               | `read_file`                |
 | Write file        | `Write`              | `write_file`               |
 | Edit file         | `Edit`               | `replace` / `edit_file`    |
 | Search            | `Grep`               | `grep_search`              |
 | Glob              | `Glob`               | `glob`                     |
-| Shell             | `Bash(jq:*)`         | `run_shell_command` (granularidade via Policy Engine) |
-| Skill invocation  | `Skill`              | `@<skill-name>` ou auto    |
-| Agent invocation  | `Agent`/`Task`       | `@<agent-name>` ou tool por nome |
+| Shell             | `Bash(jq:*)`         | `run_shell_command` (granularity via Policy Engine) |
+| Skill invocation  | `Skill`              | `@<skill-name>` or auto    |
+| Agent invocation  | `Agent`/`Task`       | `@<agent-name>` or tool by name |
 | MCP               | `mcp__server__tool`  | `mcp_server_*` wildcards   |
 
-### 10.4 Fonte da verdade vs cópia
+### 10.4 Source of truth vs copy
 
-| Asset                    | Fonte canônica                | Espelho                       |
+| Asset                    | Canonical source              | Mirror                        |
 |--------------------------|-------------------------------|-------------------------------|
 | Skills                   | `.claude/skills/`             | `.gemini/skills/` (via sync)  |
-| Subagents — Claude       | `.claude/agents/`             | (não espelha)                 |
-| Subagents — Gemini       | `.gemini/agents/`             | (não espelha)                 |
-| Hooks                    | `.claude/hooks/`              | (não espelha; Gemini referencia mesmo path) |
-| State                    | `state/`                      | (compartilhado entre runtimes) |
-| Policy (Gemini)          | `.gemini/policies/ea-policies.toml` | (Claude usa `permissions` em settings.json) |
+| Subagents — Claude       | `.claude/agents/`             | (not mirrored)                |
+| Subagents — Gemini       | `.gemini/agents/`             | (not mirrored)                |
+| Hooks                    | `.claude/hooks/`              | (not mirrored; Gemini references same path) |
+| State                    | `state/`                      | (shared between runtimes)     |
+| Policy (Gemini)          | `.gemini/policies/ea-policies.toml` | (Claude uses `permissions` in settings.json) |
 
-`scripts/sync-runtimes.sh` mantém só skills em sincronia (formato é compatível).
-Subagents são fonte separada porque os modelos de orquestração são diferentes.
+`scripts/sync-runtimes.sh` keeps only skills in sync (format is compatible).
+Subagents are a separate source because the orchestration models differ.
 
-### 10.5 Quando atualizar o quê
+### 10.5 When to update what
 
-| Mudança                                    | Editar                                          | Sync? |
+| Change                                    | Edit                                           | Sync? |
 |-------------------------------------------|------------------------------------------------|-------|
-| Lógica de skill (workflow)                | `.claude/skills/<name>/SKILL.md`               | ✅ rodar `scripts/sync-runtimes.sh` |
-| Subagent só Claude                        | `.claude/agents/<name>.md`                     | —     |
-| Subagent só Gemini                        | `.gemini/agents/<name>.md`                     | —     |
-| Hook script                                | `.claude/hooks/<file>.sh`                      | — (referenciado por ambas configs) |
-| Permissão Claude                          | `.claude/settings.json :: permissions.allow`   | —     |
-| Permissão Gemini (granular por subagent)  | `.gemini/policies/ea-policies.toml`            | —     |
-| Wiring de hook em runtime                 | `.claude/settings.json` ou `.gemini/settings.json` | —  |
+| Skill logic (workflow)                    | `.claude/skills/<name>/SKILL.md`               | ✅ run `scripts/sync-runtimes.sh` |
+| Claude-only subagent                      | `.claude/agents/<name>.md`                     | —     |
+| Gemini-only subagent                      | `.gemini/agents/<name>.md`                     | —     |
+| Hook script                               | `.claude/hooks/<file>.sh`                      | — (referenced by both configs) |
+| Claude permission                         | `.claude/settings.json :: permissions.allow`   | —     |
+| Gemini permission (per-subagent granular) | `.gemini/policies/ea-policies.toml`            | —     |
+| Hook wiring in runtime                    | `.claude/settings.json` or `.gemini/settings.json` | —  |

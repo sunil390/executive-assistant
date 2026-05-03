@@ -19,13 +19,13 @@ out="${eod_dir}/${today}-eod.md"
 
 {
   printf '# EOD — %s\n\n' "$today"
-  printf '## Modo final\n%s\n\n' "$(jq -r '.mode.current' "$EA_STATE")"
-  printf '## Skills/Subagents invocados\n'
+  printf '## Final mode\n%s\n\n' "$(jq -r '.mode.current' "$EA_STATE")"
+  printf '## Skills/Subagents invoked\n'
   jq -r '.stats.skills_invoked_today | to_entries[]? | "- skill \(.key): \(.value)x"' "$EA_STATE"
   jq -r '.stats.subagents_invoked_today | to_entries[]? | "- agent \(.key): \(.value)x"' "$EA_STATE"
-  printf '\n## Top 3 que estavam definidas\n'
+  printf '\n## Top 3 defined\n'
   jq -r '.today.top_3_priorities[]? | "- \(.)"' "$EA_STATE"
-  printf '\n## Commitments due amanhã\n'
+  printf '\n## Commitments due tomorrow\n'
   tomorrow="$(date -d 'tomorrow' +%Y-%m-%d 2>/dev/null || date -v+1d +%Y-%m-%d)"
   jq -r --arg t "$tomorrow" '.commitments[]? | select(.status == "open" and (.due.declared // "") <= $t) | "- [\(.id)] \(.description)"' \
     "${EA_ROOT}/state/commitments/made-by-operator.json" 2>/dev/null || true

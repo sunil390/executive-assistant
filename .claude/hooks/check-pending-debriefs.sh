@@ -37,10 +37,10 @@ done < <(find "$meetings_dir" -maxdepth 1 -name "*-prep.md" 2>/dev/null || true)
 
 if [ ${#pending[@]} -gt 0 ]; then
   list="$(printf '  - %s\n' "${pending[@]}")"
-  ea_deny_tool "Há reuniões com prep mas sem debrief:
+  ea_deny_tool "There are meetings with prep but no debrief:
 $list
 
-Rode meeting-debriefer nas reuniões anteriores antes de preparar a próxima. Você nunca entra numa reunião sem ter processado a anterior."
+Run meeting-debriefer on prior meetings before preparing the next one. You never go into a meeting without having processed the previous one."
   exit 0
 fi
 
